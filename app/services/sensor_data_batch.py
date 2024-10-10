@@ -91,15 +91,15 @@ async def run_optimization(db, optimization_data):
         if temperature > 25:  # Si la temperatura es mayor a 25°C
             led_states[1] = "on"  # Encender el foco
             led_states[2] = "on"  # Encender el ventilador
-            led_states[3] = "off"  # Apagar el A/C
+            led_states[3] = "on"  # Apagar el A/C
         elif 20 <= temperature <= 25:  # Temperatura entre 20°C y 25°C
-            led_states[1] = "off"  # Apagar el foco
-            led_states[2] = "on"  # Mantener el ventilador encendido
+            led_states[1] = "on"  # Apagar el foco
+            led_states[2] = "off"  # Mantener el ventilador encendido
             led_states[3] = "on"   # Encender el A/C
         else:  # Si la temperatura es menor a 20°C
-            led_states[1] = "off"  # Apagar el foco
+            led_states[1] = "on"  # Apagar el foco
             led_states[2] = "off"  # Apagar el ventilador
-            led_states[3] = "on"    # Encender el A/C
+            led_states[3] = "off"    # Encender el A/C
     else:
         # Si no hay presencia, apaga todos los dispositivos
         led_states[1] = "off"  # Apagar el foco
