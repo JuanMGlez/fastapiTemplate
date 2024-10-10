@@ -2,8 +2,11 @@ from fastapi import FastAPI
 from typing import Dict
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.routes import router as api_router
+from app.schemas.ws import ConnectionManager
+from fastapi import  WebSocket
 
 app = FastAPI()
+
 
 # Configuración de CORS para permitir todos los orígenes
 app.add_middleware(
@@ -20,3 +23,4 @@ app.include_router(api_router, prefix="/api/v1")
 @app.get("/health")
 async def health_check() -> Dict[str, str]:
     return {"status": "ok"}
+

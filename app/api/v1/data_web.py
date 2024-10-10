@@ -2,7 +2,6 @@ from app.services.sensor_data_batch import get_sensor_data
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.postgres import get_async_db
-from typing import Dict, Any
 from typing import Optional
 from fastapi import Query
 

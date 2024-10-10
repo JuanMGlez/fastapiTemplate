@@ -17,6 +17,7 @@ def get_database_url() -> str:
 
 class Settings:
     DATABASE_URL = get_database_url()
+    DATABASE_URL_TRIG = os.getenv("DATABASE_URL")
 
 
 # Crear una instancia de Settings
