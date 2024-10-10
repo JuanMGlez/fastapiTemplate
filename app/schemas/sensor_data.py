@@ -16,3 +16,8 @@ class SensorData(SensorDataBase):
 
     class Config:
         from_attributes = True
+
+# Esquema para respuesta paginada
+class PaginatedSensorData(BaseModel):
+    total: int
+    data: List[SensorData]
