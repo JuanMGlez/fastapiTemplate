@@ -38,11 +38,8 @@ async def get_sensor_data_batch(
               (DeviceState.device_id == subquery.c.device_id) & (DeviceState.created_at == subquery.c.latest_timestamp))
         .join(Device, DeviceState.device_id == Device.id)
     )
-    print(query)
     result = await db.execute(query)
     device_states = result.fetchall()
-    for x in device_states:
-        print(str(x))
     # Estructurar la respuesta en una lista de diccionarios
     return [
         {
