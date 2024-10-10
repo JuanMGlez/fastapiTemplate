@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.db.postgres import get_async_db  # Asegúrate de que este se refiere a la sesión asíncrona
-from app.models.devices import DeviceState
+from app.models.device_states import DeviceState
 from app.schemas.devices import DeviceStateResponse, DeviceStateCreate
 from app.schemas.ws import ConnectionManager
 

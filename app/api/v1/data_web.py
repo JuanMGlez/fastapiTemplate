@@ -1,6 +1,7 @@
 from app.services.sensor_data_batch import get_sensor_data
 from fastapi import APIRouter, Depends
-from app.models.devices import DeviceState
+from app.models.device_states import DeviceState
+from app.models.devices import Device
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.postgres import get_async_db
 from typing import Optional
@@ -32,19 +33,22 @@ async def get_sensor_data_batch(
 
     # Consulta principal para obtener el estado más reciente
     query = (
-        select(DeviceState)
+        select(DeviceState, Device.name)
         .join(subquery,
               (DeviceState.device_id == subquery.c.device_id) & (DeviceState.created_at == subquery.c.latest_timestamp))
+        .join(Device, DeviceState.device_id == Device.id)
     )
-
+    print(query)
     result = await db.execute(query)
-    device_states = result.scalars().all()
-
+    device_states = result.fetchall()
+    for x in device_states:
+        print(str(x))
     # Estructurar la respuesta en una lista de diccionarios
     return [
         {
-            "device_id": ds.device_id,
-            "state": ds.state,
-            "timestamp": ds.created_at
+            "device_id": ds[0].device_id,
+            "name": ds[1],  # Añadimos el nombre del dispositivo
+            "state": ds[0].state,
+            "timestamp": ds[0].created_at
         } for ds in device_states
     ]
