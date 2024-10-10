@@ -7,6 +7,7 @@ from typing import Optional
 from fastapi import Query
 from app.schemas import sensor_data as schemas
 from app.schemas.sensor_data import PaginatedSensorData
+from app.models.device_states import DeviceState
 
 async def data_in_service(db, sensor_data_batch):
     data_format = []
@@ -40,8 +41,75 @@ async def data_in_service(db, sensor_data_batch):
 
         # Confirmar los cambios en la base de datos
     await db.commit()
-    await db.refresh(db_sensor_data)  # Obtener los datos actualizados
+
+    # Ejecutar el algoritmo de optimización aquí
+    # Ejecutar el algoritmo de optimización
+    temperature_value = next(
+        (item['value'] for item in data_format if item['id'] == sensor_data_batch.get("sensor_id_temperature")),
+        None  # Valor por defecto si no se encuentra
+    )
+    motion_value = next(
+        (item['value'] for item in data_format if item['id'] == sensor_data_batch.get("sensor_id_motion")),
+        None  # Valor por defecto si no se encuentra
+    )
+
+    # Obtener el estado de los dispositivos
+    device_state_result = await db.execute(select(DeviceState).filter(DeviceState.state == "on"))
+    device_states = device_state_result.scalars().all()
+
+    led_states = {
+        1: "off",  # Foco
+        2: "off",  # Ventilador
+        3: "off"  # A/C
+    }
+
+    for device_state in device_states:
+        led_states[device_state.device_id] = "on"  # Actualizar el estado del LED correspondiente
+
+    await run_optimization(db, {
+        "temperature": temperature_value,
+        "presence": bool(motion_value),
+        "led_states": led_states  # Usar el diccionario de estados de LED con IDs
+    })
+
+    #await db.refresh(db_sensor_data)  # Obtener los datos actualizados
     return db_sensor_data
+
+
+async def run_optimization(db, optimization_data):
+    temperature = optimization_data["temperature"]
+    presence = optimization_data["presence"]
+    led_states = optimization_data["led_states"]
+
+    # Ejemplo de lógica de optimización
+    if presence:
+        if temperature > 25:  # Si la temperatura es mayor a 25°C
+            led_states[1] = "on"  # Encender el foco
+            led_states[2] = "on"  # Encender el ventilador
+            led_states[3] = "off"  # Apagar el A/C
+        elif 20 <= temperature <= 25:  # Temperatura entre 20°C y 25°C
+            led_states[1] = "off"  # Apagar el foco
+            led_states[2] = "on"  # Mantener el ventilador encendido
+            led_states[3] = "on"   # Encender el A/C
+        else:  # Si la temperatura es menor a 20°C
+            led_states[1] = "off"  # Apagar el foco
+            led_states[2] = "off"  # Apagar el ventilador
+            led_states[3] = "on"    # Encender el A/C
+    else:
+        # Si no hay presencia, apaga todos los dispositivos
+        led_states[1] = "off"  # Apagar el foco
+        led_states[2] = "off"  # Apagar el ventilador
+        led_states[3] = "off"   # Apagar el A/C
+
+    # Actualizar el estado de los dispositivos en la base de datos
+    for device_id, state in led_states.items():
+        device_state = DeviceState(device_id=device_id, state=state)
+        db.add(device_state)
+
+    await db.commit()  # Confirmar cambios en la base de datos
+
+    # Aquí podrías agregar lógica adicional para notificaciones, registros, etc.
+
 
 async def get_sensor_data(
     db,
