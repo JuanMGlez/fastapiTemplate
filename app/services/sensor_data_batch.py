@@ -8,6 +8,11 @@ from fastapi import Query
 from app.schemas import sensor_data as schemas
 from app.schemas.sensor_data import PaginatedSensorData
 from app.models.device_states import DeviceState
+from app.schemas.ws import ConnectionManager
+from fastapi import WebSocket
+
+manager = ConnectionManager()
+
 
 async def data_in_service(db, sensor_data_batch):
     data_format = []
@@ -103,8 +108,10 @@ async def run_optimization(db, optimization_data):
 
     # Actualizar el estado de los dispositivos en la base de datos
     for device_id, state in led_states.items():
-        device_state = DeviceState(device_id=device_id, state=state)
-        db.add(device_state)
+        if device_id is not None:
+            device_state = DeviceState(device_id=device_id, state=state)
+            db.add(device_state)
+            await manager.send_message({"device_id": device_id, "state": state})
 
     await db.commit()  # Confirmar cambios en la base de datos
 
@@ -145,3 +152,15 @@ async def get_sensor_data(
             recorded_at=sd.recorded_at
         ) for sd in sensor_data]
     )
+
+
+async def web_sock(websocket:WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await manager.send_message(f"You wrote: {data}")
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        manager.disconnect(websocket)

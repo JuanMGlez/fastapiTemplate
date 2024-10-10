@@ -8,6 +8,7 @@ from app.db.postgres import get_async_db  # Asegúrate de que este se refiere a 
 from app.models.device_states import DeviceState
 from app.schemas.devices import DeviceStateResponse, DeviceStateCreate
 from app.schemas.ws import ConnectionManager
+from app.services.sensor_data_batch import web_sock
 
 manager = ConnectionManager()
 
@@ -33,13 +34,6 @@ async def create_device(device: DeviceStateCreate, db: AsyncSession = Depends(ge
 # WebSocket endpoint
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
-    try:
-        while True:
-            data = await websocket.receive_text()
-            await manager.send_message(f"You wrote: {data}")
-    except Exception as e:
-        print(f"Error: {e}")
-    finally:
-        manager.disconnect(websocket)
+    await web_sock(websocket)
+
 
